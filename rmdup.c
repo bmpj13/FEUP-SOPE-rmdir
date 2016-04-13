@@ -35,9 +35,14 @@ void copy (fileEntry *dst, fileEntry *src);
 
 int main(int argc, char** argv) 
 {
+    fileEntry fe1;
+    fileEntry fe2;
     
     pid_t pid;
     FILE *fp;
+    
+    FILE *hl;
+    char hlinksPath[2 * BUFFER_LEN];
     
     
     if (argc != 2) 
@@ -61,9 +66,12 @@ int main(int argc, char** argv)
         perror(argv[1]);
         exit(3);
     }
-    else {
+    else 
+    {
         wait(NULL);
         
+        
+        /* Opening file with the regular files, sorted */
         if( (fp = fopen("files.txt", "r")) == NULL )
         {  
             perror("files.txt");
@@ -72,46 +80,60 @@ int main(int argc, char** argv)
         }
         
         
-        fileEntry *fe1 = (fileEntry *) malloc(sizeof(fileEntry));
-        fileEntry *fe2 = (fileEntry *) malloc(sizeof(fileEntry));
+        /* Opening file where hardlinks' information will be stored */
+        sprintf(hlinksPath, "%s/%s", argv[1], "hlinks.txt");
+        if ( (hl = fopen(hlinksPath, "w")) == NULL )
+        {
+            perror("hlinks.txt");
+            fclose(fp);
+            fclose(hl);
+            exit(5);
+        }
         
         
-        if (loadFileEntry(fe1, fp) == 0) 
+        
+        if (loadFileEntry(&fe1, fp) == 0)           /* load fe1, pivot file */
         {
             
-            while (loadFileEntry(fe2, fp) == 0) 
+            while (loadFileEntry(&fe2, fp) == 0)    /* load fe2, candidate file */
             {
                 
                 int r;
-                if ( (r = equals(fe1, fe2)) == 1 ) 
+                if ( (r = equals(&fe1, &fe2)) == 1 ) 
                 {
-                    unlink(fe2->url);
-                    link(fe1->url, fe2->url);
+                    /* if two files are equal, then an hardlink is created */
+                    unlink(fe2.url);
+                    link(fe1.url, fe2.url);
+                    fprintf(hl, "%-30s %-8s %-25s\n", fe2.url, "--->", fe1.url);
                 }
                 else if (r == 0) 
                 {
-                    copy(fe1, fe2);
+                    /* else, copy content from candidate to pivot */
+                    copy(&fe1, &fe2);
                 }
                 else
                 {
-                    free(fe1);
-                    free(fe2);
                     fclose(fp);
-                    exit(5);   
+                    fclose(hl);
+                    exit(6);   
                 }
             }
         }
         
-        free(fe1);
-        free(fe2);
         fclose(fp);
+        fclose(hl);
     }
     
     return 0;
 }
 
 
+
+
+
 int loadFileEntry (fileEntry *fe, FILE* fp) {
+    
+    /* Loads regular file's info into a struct, reading with from a file, with a specific format */
     
     char buffer[FILE_LINE_LEN];
     char *token;
@@ -141,6 +163,8 @@ int loadFileEntry (fileEntry *fe, FILE* fp) {
 
 
 int equals(fileEntry *fe1, fileEntry *fe2) {
+    
+    /* Checks if two files are equal, in their name, permissions, and content */
     
     FILE *fp1, *fp2;
     int ch1, ch2;

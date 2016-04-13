@@ -18,8 +18,8 @@ int main(int argc, char** argv) {
     
     int pipefd[2];
     int finalfd;
-    pid_t pid;
-    pid_t subpid;
+    pid_t pid1;
+    pid_t pid2;
     
     
     if (argc != 2) 
@@ -46,17 +46,19 @@ int main(int argc, char** argv) {
     
     
     
-    pid = fork();
+    pid1 = fork();
     
-    if (pid < 0) 
+    if (pid1 < 0) 
     {
         
         perror("Fork failed");
         close(finalfd);
         exit(4);
     }
-    else if (pid == 0) 
+    else if (pid1 == 0) 
     {
+        /* lsdir output will be written to a pipe */
+        
         close(pipefd[READ]);
         
         if( dup2(pipefd[WRITE], STDOUT_FILENO) < 0)
@@ -72,18 +74,19 @@ int main(int argc, char** argv) {
     } 
     else 
     {
+        /* sort utilitary will receive content from file, and write its output to files.txt */
         
         close(pipefd[WRITE]);
         
-        subpid = fork();
+        pid2 = fork();
         
-        if (subpid < 0) 
+        if (pid2 < 0) 
         {
             perror("Fork failed");
             close(finalfd);
             exit(7);
         }
-        else if (subpid == 0) 
+        else if (pid2 == 0) 
         {
             if(dup2(pipefd[READ], STDIN_FILENO) < 0)
             {
@@ -104,10 +107,10 @@ int main(int argc, char** argv) {
         }
         else 
         {
-            waitpid(subpid, NULL, 0);
+            waitpid(pid2, NULL, 0);
         }
     }
     
     close(finalfd);
-    exit(0);
+    return 0;
 }

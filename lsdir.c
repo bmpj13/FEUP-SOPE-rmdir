@@ -44,6 +44,7 @@ int main (int argc, char** argv) {
         
         sprintf(url, "%s/%s", argv[1], direntp->d_name);
         
+        /* read file information */
         if (lstat(url, &stat_buf) < 0) 
         {
             perror(direntp->d_name);
@@ -52,6 +53,7 @@ int main (int argc, char** argv) {
         }
         
         
+        /* if regular, write its info */
         if (S_ISREG(stat_buf.st_mode)) 
         {
             
@@ -63,6 +65,7 @@ int main (int argc, char** argv) {
             );
             
         }
+        /* if directory, instantiate a new 'lsdir' */
         else if (S_ISDIR(stat_buf.st_mode) && 
             strcmp(direntp->d_name, ".") && 
             strcmp(direntp->d_name, ".."))
