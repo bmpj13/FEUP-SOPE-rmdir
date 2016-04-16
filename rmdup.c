@@ -1,31 +1,4 @@
-#include <stdlib.h>
-#include <string.h>
-#include <dirent.h>
-#include <sys/stat.h>
-#include <errno.h>
-#include <sys/types.h> 
-#include <unistd.h> 
-#include <sys/wait.h>
-#include <fcntl.h>
-#include <stdio.h>
-
-
-#define BUFFER_LEN        256
-#define PERMS_LEN         11
-#define DATE_LEN          20
-#define FILE_LINE_LEN     (2*BUFFER_LEN + PERMS_LEN + DATE_LEN)   
-
-
-typedef struct {
-    
-    char name[BUFFER_LEN];
-    char permissions[PERMS_LEN];
-    char date[DATE_LEN];
-    char path[BUFFER_LEN];
-    char url[2 * BUFFER_LEN];
-} fileEntry;
-
-
+#include "rmdup.h"
 
 
 int loadFileEntry (fileEntry *fe, FILE* fp);
@@ -35,6 +8,8 @@ void copy (fileEntry *dst, fileEntry *src);
 
 int main(int argc, char** argv) 
 {
+    int status;
+    
     fileEntry fe1;
     fileEntry fe2;
     
@@ -68,7 +43,13 @@ int main(int argc, char** argv)
     }
     else 
     {
-        wait(NULL);
+        wait(&status);
+        
+        if (status != 0) 
+        {
+            fprintf(stderr, "Exiting program.\n");
+            exit(7);
+        }
         
         
         /* Opening file with the regular files, sorted */
@@ -126,9 +107,6 @@ int main(int argc, char** argv)
     
     return 0;
 }
-
-
-
 
 
 int loadFileEntry (fileEntry *fe, FILE* fp) {
@@ -212,3 +190,4 @@ void copy (fileEntry *dst, fileEntry *src) {
     strcpy(dst->path, src->path);
     strcpy(dst->url, src->url);
 }
+

@@ -13,8 +13,6 @@
 
 #define BUFFER_LEN        256
 
-
-
 int main (int argc, char** argv) {
     
     DIR *dirp;
@@ -92,3 +90,4 @@ int main (int argc, char** argv) {
     closedir(dirp);
     return 0;
 }
+
