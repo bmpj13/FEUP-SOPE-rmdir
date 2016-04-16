@@ -80,23 +80,24 @@ int main(int argc, char** argv)
             {
                 
                 int r;
-                if ( (r = equals(&fe1, &fe2)) == 1 ) 
+                if ( (r = equals(&fe1, &fe2)) == -1 ) 
                 {
-                    /* if two files are equal, then an hardlink is created */
+                    fclose(fp);
+                    fclose(hl);
+                    fprintf(stderr, "An error occured reading files.\n");
+                    exit(6);   
+                }
+                else if (r == 0) 
+                {
+                     /* if two files are equal, then an hardlink is created */
                     unlink(fe2.url);
                     link(fe1.url, fe2.url);
                     fprintf(hl, "%-30s %-8s %-25s\n", fe2.url, "--->", fe1.url);
                 }
-                else if (r == 0) 
+                else if (r == 1)
                 {
-                    /* else, copy content from candidate to pivot */
-                    copy(&fe1, &fe2);
-                }
-                else
-                {
-                    fclose(fp);
-                    fclose(hl);
-                    exit(6);   
+                    /* else if no other file can be equal, copy content from candidate to pivot */
+                    copy(&fe1, &fe2); 
                 }
             }
         }
@@ -148,7 +149,7 @@ int equals(fileEntry *fe1, fileEntry *fe2) {
     int ch1, ch2;
     
     if (strcmp(fe1->name, fe2->name) || strcmp(fe1->permissions, fe2->permissions))
-        return 0;
+        return 1;
     
     
     if( (fp1 = fopen(fe1->url, "r")) == NULL )
@@ -176,9 +177,9 @@ int equals(fileEntry *fe1, fileEntry *fe2) {
     
     
     if (ch1 == ch2)
-        return 1;
-    else
         return 0;
+    else
+        return 2;
 }
 
 
